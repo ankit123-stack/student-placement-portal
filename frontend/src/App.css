@@ -1,0 +1,165 @@
+.applications-page {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.applications-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.applications-header h1 {
+  margin-bottom: 8px;
+  color: #1e293b;
+}
+
+.applications-header p {
+  color: #64748b;
+}
+
+.applications-message {
+  text-align: center;
+  margin: 20px 0;
+  color: #475569;
+}
+
+.applications-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.application-card {
+  background: white;
+  padding: 25px;
+  border-radius: 14px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.application-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.application-header h2 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 21px;
+}
+
+.application-header h3 {
+  margin: 6px 0 0;
+  color: #2563eb;
+}
+
+.application-card p {
+  margin: 10px 0;
+  color: #475569;
+}
+
+.application-status {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.application-status.applied {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.application-status.shortlisted {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.application-status.rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.application-status.selected {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.no-applications {
+  text-align: center;
+  padding: 45px;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.no-applications h3 {
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.no-applications p {
+  color: #64748b;
+  margin-bottom: 20px;
+}
+
+.no-applications .apply-button {
+  width: auto;
+  padding: 11px 25px;
+}
+
+/* Admin Create Job */
+
+.admin-job-actions {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0 30px;
+}
+
+.admin-create-button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 12px 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.admin-create-button:hover {
+  background: #1d4ed8;
+}
+
+.admin-create-job-card {
+  max-width: 700px;
+  margin: 0 auto 30px;
+  background: white;
+  padding: 30px;
+  border-radius: 14px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.admin-create-job-card h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #1e293b;
+}
+
+.admin-create-job-card textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.admin-create-job-card textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+}
