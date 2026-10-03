@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const Application = require("../models/Application");
 const Job = require("../models/Job");
-const StudentProfile = require("../models/studentProfile");
+const StudentProfile = require("../models/StudentProfile");
 const Notification = require("../models/Notification");
 
 // =========================================================

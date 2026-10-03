@@ -1,7 +1,7 @@
 const User = require("../models/user");
-const StudentProfile = require("../models/studentProfile");
-const Job = require("../models/job");
-const Application = require("../models/application");
+const StudentProfile = require("../models/StudentProfile");
+const Job = require("../models/Job");
+const Application = require("../models/Application");
 
 // =========================================================
 // GET ALL STUDENTS
