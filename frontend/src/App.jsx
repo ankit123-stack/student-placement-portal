@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "https://student-placement-portal-api.onrender.com";
 
 // =============================================================
 // DEFAULT DATA
@@ -77,7 +77,7 @@ async function apiRequest(url, options = {}) {
     );
   } catch {
     throw new Error(
-      "Unable to connect to the backend server. Make sure the server is running on port 5000."
+      "Unable to connect to the deployed backend server. Please check your internet connection and try again."
     );
   }
 
@@ -1803,13 +1803,40 @@ function App() {
           return completeApplication;
         }
 
-        // ADMIN: use the admin-only application details endpoint.
-        const data = await apiRequest(
-          `/api/admin/applications/${applicationId}`,
-          { headers: getAuthHeaders() }
-        );
+        // ADMIN: use the applications already loaded from
+        // GET /api/admin/applications.
+        // The backend does not provide GET /api/admin/applications/:id.
+        let application = Array.isArray(adminApplications)
+          ? adminApplications.find(
+            (item) =>
+              String(item?._id) === String(applicationId)
+          )
+          : null;
 
-        const application = data?.application || data;
+        // If it is not currently in state, refresh the admin
+        // applications list and search again.
+        if (!application) {
+          const data = await apiRequest(
+            "/api/admin/applications",
+            {
+              headers: getAuthHeaders(),
+            }
+          );
+
+          const refreshedApplications =
+            Array.isArray(data)
+              ? data
+              : data?.applications || [];
+
+          setAdminApplications(
+            refreshedApplications
+          );
+
+          application = refreshedApplications.find(
+            (item) =>
+              String(item?._id) === String(applicationId)
+          );
+        }
 
         if (!application) {
           throw new Error(
@@ -1817,9 +1844,9 @@ function App() {
           );
         }
 
-        // Admin application details may contain the User record and
-        // StudentProfile separately. Merge the matching admin student
-        // record when available.
+        // Admin application list already contains the
+        // application information. Merge the matching
+        // student record when available.
         const studentUser =
           application?.student &&
             typeof application.student === "object"
@@ -1830,10 +1857,14 @@ function App() {
           Array.isArray(students)
             ? students.find((student) =>
               (studentUser?._id &&
-                String(student?._id) === String(studentUser._id)) ||
+                String(student?._id) ===
+                String(studentUser._id)) ||
               (studentUser?.email &&
                 String(student?.email).toLowerCase() ===
-                String(studentUser.email).toLowerCase())
+                String(studentUser.email).toLowerCase()) ||
+              (application?.studentId &&
+                String(student?._id) ===
+                String(application.studentId))
             )
             : null;
 
@@ -1856,7 +1887,10 @@ function App() {
           },
         };
 
-        setSelectedApplication(completeApplication);
+        setSelectedApplication(
+          completeApplication
+        );
+
         return completeApplication;
       } catch (error) {
         console.error(
