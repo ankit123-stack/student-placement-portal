@@ -11,33 +11,29 @@ const User = require("../models/user");
 
 const router = express.Router();
 
-
 // =========================================================
 // CREATE / UPDATE STUDENT PROFILE
 // =========================================================
-
 router.post(
     "/profile",
     protect,
     createOrUpdateProfile
 );
 
-
 // =========================================================
 // GET STUDENT PROFILE
 // =========================================================
-
 router.get(
     "/profile",
     protect,
     getStudentProfile
 );
 
-
 // =========================================================
 // UPLOAD RESUME TO CLOUDINARY
+// Uses an UNSIGNED Cloudinary Upload Preset.
+// No API key or API secret is required.
 // =========================================================
-
 router.post(
     "/resume",
     protect,
@@ -45,39 +41,27 @@ router.post(
 
     async (req, res) => {
         try {
-
             // -------------------------------------------------
-            // Check file
+            // Check uploaded file
             // -------------------------------------------------
-
             if (!req.file) {
                 return res.status(400).json({
                     message: "Please upload a PDF resume",
                 });
             }
 
-
             // -------------------------------------------------
-            // Check Cloudinary environment variables
+            // Cloudinary configuration
             // -------------------------------------------------
-
             const cloudName =
                 process.env.CLOUDINARY_CLOUD_NAME;
 
-            const apiKey =
-                process.env.CLOUDINARY_API_KEY;
+            const uploadPreset =
+                process.env.CLOUDINARY_UPLOAD_PRESET;
 
-            const apiSecret =
-                process.env.CLOUDINARY_API_SECRET;
-
-
-            if (
-                !cloudName ||
-                !apiKey ||
-                !apiSecret
-            ) {
+            if (!cloudName || !uploadPreset) {
                 console.error(
-                    "Cloudinary environment variables are missing"
+                    "Cloudinary unsigned upload configuration is missing"
                 );
 
                 return res.status(500).json({
@@ -86,27 +70,15 @@ router.post(
                 });
             }
 
-
             // -------------------------------------------------
-            // Create Cloudinary upload URL
+            // Cloudinary unsigned upload endpoint
             // -------------------------------------------------
-
             const uploadUrl =
                 `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`;
-
-
-            // -------------------------------------------------
-            // Generate unique public ID
-            // -------------------------------------------------
-
-            const publicId =
-                `${req.user.id}-${Date.now()}.pdf`;
-
 
             // -------------------------------------------------
             // Create multipart form data
             // -------------------------------------------------
-
             const formData = new FormData();
 
             const fileBlob = new Blob(
@@ -116,63 +88,35 @@ router.post(
                 }
             );
 
-
             formData.append(
                 "file",
                 fileBlob,
                 req.file.originalname
             );
 
-
+            // IMPORTANT:
+            // Only the unsigned upload preset is required.
+            // We do NOT send API key, API secret,
+            // Authorization header, or public_id.
             formData.append(
-                "folder",
-                "student-placement-resumes"
+                "upload_preset",
+                uploadPreset
             );
 
-
-            formData.append(
-                "public_id",
-                publicId
-            );
-
-
             // -------------------------------------------------
-            // Basic Authentication
+            // Upload to Cloudinary
             // -------------------------------------------------
-
-            const credentials =
-                Buffer
-                    .from(`${apiKey}:${apiSecret}`)
-                    .toString("base64");
-
-
-            // -------------------------------------------------
-            // Upload directly to Cloudinary
-            // -------------------------------------------------
-
             const cloudinaryResponse =
                 await fetch(
                     uploadUrl,
                     {
                         method: "POST",
-
-                        headers: {
-                            Authorization:
-                                `Basic ${credentials}`,
-                        },
-
                         body: formData,
                     }
                 );
 
-
-            // -------------------------------------------------
-            // Read Cloudinary response
-            // -------------------------------------------------
-
             const responseText =
                 await cloudinaryResponse.text();
-
 
             let cloudinaryResult;
 
@@ -186,18 +130,16 @@ router.post(
                 };
             }
 
-
             // -------------------------------------------------
-            // Cloudinary upload failed
+            // Handle Cloudinary error
             // -------------------------------------------------
-
             if (!cloudinaryResponse.ok) {
-
                 console.error(
-                    "Cloudinary upload failed:",
+                    "Cloudinary unsigned upload failed:",
                     {
                         status:
                             cloudinaryResponse.status,
+
                         response:
                             cloudinaryResult,
                     }
@@ -206,8 +148,10 @@ router.post(
                 return res.status(500).json({
                     message:
                         "Resume upload failed",
+
                     cloudinaryStatus:
                         cloudinaryResponse.status,
+
                     error:
                         cloudinaryResult?.error?.message ||
                         cloudinaryResult?.message ||
@@ -215,19 +159,15 @@ router.post(
                 });
             }
 
-
             // -------------------------------------------------
-            // Get secure Cloudinary URL
+            // Get Cloudinary secure URL
             // -------------------------------------------------
-
             const resumeUrl =
                 cloudinaryResult.secure_url;
 
-
             if (!resumeUrl) {
-
                 console.error(
-                    "Cloudinary upload succeeded but no secure URL was returned",
+                    "Cloudinary upload succeeded but no secure URL was returned:",
                     cloudinaryResult
                 );
 
@@ -237,11 +177,9 @@ router.post(
                 });
             }
 
-
             // -------------------------------------------------
-            // Save resume URL in User collection
+            // Save Cloudinary URL in MongoDB
             // -------------------------------------------------
-
             const updatedUser =
                 await User.findByIdAndUpdate(
                     req.user.id,
@@ -253,7 +191,6 @@ router.post(
                     }
                 );
 
-
             if (!updatedUser) {
                 return res.status(404).json({
                     message:
@@ -261,11 +198,9 @@ router.post(
                 });
             }
 
-
             // -------------------------------------------------
-            // Success
+            // Success logs
             // -------------------------------------------------
-
             console.log(
                 "Resume uploaded successfully to Cloudinary"
             );
@@ -275,7 +210,14 @@ router.post(
                 cloudinaryResult.public_id
             );
 
+            console.log(
+                "Cloudinary resume URL:",
+                resumeUrl
+            );
 
+            // -------------------------------------------------
+            // Success response
+            // -------------------------------------------------
             return res.status(200).json({
                 message:
                     "Resume uploaded successfully",
@@ -291,7 +233,6 @@ router.post(
             });
 
         } catch (error) {
-
             console.error(
                 "Resume upload error:",
                 error
@@ -308,6 +249,5 @@ router.post(
         }
     }
 );
-
 
 module.exports = router;
