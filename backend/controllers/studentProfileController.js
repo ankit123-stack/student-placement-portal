@@ -59,9 +59,10 @@ const createOrUpdateProfile = async (req, res) => {
         // ==========================================
         // Check if profile already exists
         // ==========================================
-        let profile = await StudentProfile.findOne({
-            user: userId,
-        });
+        let profile =
+            await StudentProfile.findOne({
+                user: userId,
+            });
 
         // ==========================================
         // Determine Placement Status
@@ -91,7 +92,9 @@ const createOrUpdateProfile = async (req, res) => {
             profile.course = course || "";
             profile.branch = branch || "";
 
+            // ======================================
             // Convert numeric fields safely
+            // ======================================
             if (
                 graduationYear !== undefined &&
                 graduationYear !== ""
@@ -107,22 +110,23 @@ const createOrUpdateProfile = async (req, res) => {
                 profile.cgpa = Number(cgpa);
             }
 
+            // ======================================
+            // Skills
+            // ======================================
             profile.skills = formattedSkills;
 
             // ======================================
-            // Keep existing resume if no new resume
-            // was provided
+            // Resume
+            //
+            // Only update when a resume was actually
+            // supplied by the request.
             // ======================================
             if (resume !== undefined) {
                 profile.resume = resume || "";
             }
 
             // ======================================
-            // IMPORTANT:
-            // Do NOT trust placementStatus sent
-            // from frontend.
-            //
-            // Calculate it from applications.
+            // Placement status comes from application
             // ======================================
             profile.placementStatus =
                 finalPlacementStatus;
@@ -140,36 +144,43 @@ const createOrUpdateProfile = async (req, res) => {
         // ==========================================
         // Create New Profile
         // ==========================================
-        profile = await StudentProfile.create({
-            user: userId,
+        profile =
+            await StudentProfile.create({
+                user: userId,
 
-            phone: phone || "",
+                phone:
+                    phone || "",
 
-            college: college || "",
+                college:
+                    college || "",
 
-            course: course || "",
+                course:
+                    course || "",
 
-            branch: branch || "",
+                branch:
+                    branch || "",
 
-            graduationYear:
-                graduationYear !== undefined &&
-                    graduationYear !== ""
-                    ? Number(graduationYear)
-                    : undefined,
+                graduationYear:
+                    graduationYear !== undefined &&
+                        graduationYear !== ""
+                        ? Number(graduationYear)
+                        : undefined,
 
-            cgpa:
-                cgpa !== undefined &&
-                    cgpa !== ""
-                    ? Number(cgpa)
-                    : undefined,
+                cgpa:
+                    cgpa !== undefined &&
+                        cgpa !== ""
+                        ? Number(cgpa)
+                        : undefined,
 
-            skills: formattedSkills,
+                skills:
+                    formattedSkills,
 
-            resume: resume || "",
+                resume:
+                    resume || "",
 
-            placementStatus:
-                finalPlacementStatus,
-        });
+                placementStatus:
+                    finalPlacementStatus,
+            });
 
         return res.status(201).json({
             message:
@@ -214,8 +225,11 @@ const createOrUpdateProfile = async (req, res) => {
         // Server Error
         // ==========================================
         return res.status(500).json({
-            message: "Server error",
-            error: error.message,
+            message:
+                "Server error",
+
+            error:
+                error.message,
         });
     }
 };
@@ -259,34 +273,41 @@ const getStudentProfile = async (req, res) => {
         // ==========================================
         // Get logged-in User
         //
-        // Resume upload route saves the resume
-        // inside User.resume.
+        // Resume upload route saves the latest
+        // Cloudinary URL inside User.resume.
         // ==========================================
         const user =
             await User.findById(userId);
 
         // ==========================================
-        // Synchronize Resume
+        // IMPORTANT RESUME SYNCHRONIZATION
         //
-        // Resume upload currently saves:
+        // User.resume is now the source of truth
+        // for the uploaded resume.
         //
-        // User.resume
+        // Previously this only synchronized when
+        // StudentProfile.resume was empty.
         //
-        // But StudentProfile.resume is used by
-        // the student profile API/frontend.
+        // That caused the old /uploads/ URL to remain
+        // even after a new Cloudinary resume was
+        // successfully uploaded.
         //
-        // If StudentProfile.resume is empty,
-        // copy the resume from User.resume.
+        // Now we synchronize whenever the values
+        // are different.
         // ==========================================
         if (
-            (!profile.resume ||
-                profile.resume.trim() === "") &&
             user &&
-            user.resume
+            user.resume &&
+            profile.resume !== user.resume
         ) {
-            profile.resume = user.resume;
+            profile.resume =
+                user.resume;
 
             await profile.save();
+
+            console.log(
+                "StudentProfile resume synchronized with User.resume"
+            );
         }
 
         // ==========================================
@@ -314,7 +335,7 @@ const getStudentProfile = async (req, res) => {
                 : "Not Placed";
 
         // ==========================================
-        // Synchronize database value
+        // Synchronize placement status
         // ==========================================
         if (
             profile.placementStatus !==
@@ -359,8 +380,11 @@ const getStudentProfile = async (req, res) => {
         // Server Error
         // ==========================================
         return res.status(500).json({
-            message: "Server error",
-            error: error.message,
+            message:
+                "Server error",
+
+            error:
+                error.message,
         });
     }
 };
