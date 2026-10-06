@@ -8,6 +8,7 @@ const {
 const protect = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
 const User = require("../models/user");
+const cloudinary = require("../config/cloudinary");
 
 const router = express.Router();
 
@@ -33,7 +34,7 @@ router.get(
 
 
 // ==========================================
-// UPLOAD STUDENT RESUME
+// UPLOAD STUDENT RESUME TO CLOUDINARY
 // ==========================================
 router.post(
     "/resume",
@@ -43,7 +44,9 @@ router.post(
     async (req, res) => {
         try {
 
-            // Check if file was uploaded
+            // ==========================================
+            // CHECK FILE
+            // ==========================================
             if (!req.file) {
                 return res.status(400).json({
                     message: "Please upload a PDF resume",
@@ -51,25 +54,69 @@ router.post(
             }
 
 
-            // Create resume path
-            const resumePath = `/uploads/${req.file.filename}`;
+            // ==========================================
+            // UPLOAD PDF TO CLOUDINARY
+            // ==========================================
+            const cloudinaryResult = await new Promise(
+                (resolve, reject) => {
+
+                    const uploadStream =
+                        cloudinary.uploader.upload_stream(
+                            {
+                                resource_type: "raw",
+
+                                folder:
+                                    "student-placement-resumes",
+
+                                public_id:
+                                    `${req.user.id}-${Date.now()}.pdf`,
+                            },
+
+                            (error, result) => {
+
+                                if (error) {
+                                    reject(error);
+                                } else {
+                                    resolve(result);
+                                }
+
+                            }
+                        );
 
 
-            // Find logged-in student and save resume
-            const updatedUser = await User.findByIdAndUpdate(
-                req.user.id,
-
-                {
-                    resume: resumePath,
-                },
-
-                {
-                    new: true,
+                    // Send the file from memory to Cloudinary
+                    uploadStream.end(req.file.buffer);
                 }
             );
 
 
-            // Check if user exists
+            // ==========================================
+            // CLOUDINARY URL
+            // ==========================================
+            const resumeUrl =
+                cloudinaryResult.secure_url;
+
+
+            // ==========================================
+            // SAVE CLOUDINARY URL IN USER
+            // ==========================================
+            const updatedUser =
+                await User.findByIdAndUpdate(
+                    req.user.id,
+
+                    {
+                        resume: resumeUrl,
+                    },
+
+                    {
+                        new: true,
+                    }
+                );
+
+
+            // ==========================================
+            // CHECK USER
+            // ==========================================
             if (!updatedUser) {
                 return res.status(404).json({
                     message: "User not found",
@@ -77,14 +124,22 @@ router.post(
             }
 
 
-            // Send successful response
+            // ==========================================
+            // SUCCESS RESPONSE
+            // ==========================================
             res.status(200).json({
 
-                message: "Resume uploaded successfully",
+                message:
+                    "Resume uploaded successfully",
 
-                file: req.file.filename,
+                file:
+                    cloudinaryResult.public_id,
 
-                resumeUrl: resumePath,
+                resumeUrl:
+                    resumeUrl,
+
+                resume:
+                    resumeUrl,
 
             });
 
@@ -97,9 +152,11 @@ router.post(
 
             res.status(500).json({
 
-                message: "Resume upload failed",
+                message:
+                    "Resume upload failed",
 
-                error: error.message,
+                error:
+                    error.message,
 
             });
         }

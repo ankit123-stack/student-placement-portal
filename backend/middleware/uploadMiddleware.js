@@ -1,22 +1,8 @@
 const multer = require("multer");
-const path = require("path");
 
-// Storage configuration
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, "uploads/");
-    },
-
-    filename: function (req, file, cb) {
-        const uniqueName =
-            Date.now() +
-            "-" +
-            Math.round(Math.random() * 1e9) +
-            path.extname(file.originalname);
-
-        cb(null, uniqueName);
-    },
-});
+// Store uploaded files temporarily in memory.
+// The file will then be uploaded to Cloudinary.
+const storage = multer.memoryStorage();
 
 // Allow only PDF files
 const fileFilter = function (req, file, cb) {
@@ -29,12 +15,11 @@ const fileFilter = function (req, file, cb) {
 
 // Multer upload configuration
 const upload = multer({
-    storage: storage,
-    fileFilter: fileFilter,
+    storage,
+    fileFilter,
     limits: {
         fileSize: 5 * 1024 * 1024,
     },
 });
 
 module.exports = upload;
-
