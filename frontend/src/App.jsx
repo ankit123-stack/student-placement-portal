@@ -2300,7 +2300,7 @@ function App() {
 
       try {
         await apiRequest(
-          `/api/jobs/${job._id}`,
+          `/api/jobs/${job._id}/status`,
           {
             method: "PUT",
             headers: {
@@ -2309,7 +2309,6 @@ function App() {
                 "application/json",
             },
             body: JSON.stringify({
-              ...job,
               status: newStatus,
             }),
           }
@@ -2330,6 +2329,7 @@ function App() {
         }
       }
     };
+
 
   // ===========================================================
   // CLOSE STUDENT PROFILE WITH ESCAPE
